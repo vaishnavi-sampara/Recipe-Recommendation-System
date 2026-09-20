@@ -10,3 +10,4 @@ python-dotenv
 groq
 openpyxl
 gunicorn
+optimum[onnxruntime]

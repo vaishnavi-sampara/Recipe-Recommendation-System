@@ -20,7 +20,7 @@ def get_db_connection():
     conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
     return conn
 
-model = SentenceTransformer('all-MiniLM-L6-v2')
+model = SentenceTransformer('all-MiniLM-L6-v2', backend="onnx")
 
 def preferences_to_vector(preferences):
     vector = model.encode(preferences)
