@@ -4,7 +4,7 @@ import psycopg2
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from huggingface_hub import InferenceClient
 from scipy.spatial.distance import cosine
 from dotenv import load_dotenv
 from groq import Groq
@@ -20,12 +20,15 @@ def get_db_connection():
     conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
     return conn
 
-model = SentenceTransformer('all-MiniLM-L6-v2', backend="onnx")
-
+hf_client = InferenceClient(token=os.environ.get('HF_API_KEY'))
+print("HF_API_KEY loaded:", bool(os.environ.get('HF_API_KEY')))
 def preferences_to_vector(preferences):
-    vector = model.encode(preferences)
-    return vector.tolist()
-
+    result = hf_client.feature_extraction(
+        preferences,
+        model="sentence-transformers/all-MiniLM-L6-v2"
+    )
+    vector = result[0] if hasattr(result, 'ndim') and result.ndim > 1 else result
+    return list(vector)
 
 @app.route('/recommend', methods=['POST'])
 def recommend():
@@ -137,8 +140,10 @@ Write a brief, friendly 2-3 sentence summary explaining why these recipes match 
                 time.sleep(2)
             else:
                 return "Recommendations are based on similarity to your preferences. (AI summary temporarily unavailable.)"
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
 
 
 
